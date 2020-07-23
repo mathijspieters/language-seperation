@@ -175,7 +175,7 @@ def initialize_model_(model):
     """
     print("Glorot init")
     for name, p in model.named_parameters():
-        if name.startswith("emb_") or "lagrange" in name or 'layer_mu.bias' in name:
+        if name.startswith("emb_"):
             print("{:10s} {:20s} {} requires gradient={}".format("unchanged", name, p.shape, p.requires_grad))
         elif "lstm" in name and len(p.shape) > 1:
             print("{:10s} {:20s} {} requires gradient={}".format("xavier_n", name, p.shape, p.requires_grad))
@@ -195,12 +195,7 @@ def args_to_results_path(args):
     Create path for model, if model is only evaluated return the specified path.
     For every new experiment a new folder is created, using an incremental number
     """
-    path = os.path.join('results', args.model, args.dataset)
-    if not args.train:
-        path = os.path.join(path, args.load_dir)
-        if not os.path.exists(path):
-            exit("Path does not exist: %s" % path)
-        return path
+    path = os.path.join('results', args.dataset)
 
     if not os.path.exists(os.path.join(path, '0')):
         path = os.path.join(path, '0')

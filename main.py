@@ -70,7 +70,7 @@ def eval(model, test_generator, vocab, vocab_tokens):
 
 
 def train(model, train_generator, test_generator, vocab, vocab_tokens, epochs=args.epochs):
-    optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=0)
+    optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
     step = 0
 
@@ -81,8 +81,10 @@ def train(model, train_generator, test_generator, vocab, vocab_tokens, epochs=ar
         extra_keys = set()
         summary_dict = defaultdict(float)
 
-        if epoch % 5 == 0 or dev == 'cpu':
+        if epoch % args.eval_every == 0:
             eval(model, test_generator, vocab, vocab_tokens)
+
+        if epoch % args.save_every == 0:
             utils.save_model(model, PATH)
 
         model.train()
@@ -118,12 +120,6 @@ def train(model, train_generator, test_generator, vocab, vocab_tokens, epochs=ar
                                                                           for k in extra_keys])))
                 t.update()
 
-            if dev == 'cuda':
-                print("Epoch: %2d    Loss: %.3f   %s" % (epoch, epoch_loss / epoch_step,
-                                                         "   ".join(
-                                                             ["%s: %.4f " % (k, summary_dict[k] / epoch_step)
-                                                              for k in extra_keys])))
-
 
 def main():
     params = {'batch_size': args.batch_size,
@@ -138,11 +134,8 @@ def main():
     elif args.dataset == 'hatespeech':
         train_generator, test_generator, vocab, vocab_tokens = dataloader.load_hatespeech_tokens(params,
                                                                                                use_balanced_loader=False)
-
-    elif args.dataset == 'sst':
-        train_generator, test_generator, dev_generator, vocab, vocab_tokens = dataloader.load_SST_tokens(params)
     else:
-        exit("Unknown dataset")
+        raise NotImplementedError("This dataset is not implemented")
 
 
     train_generator = dataset.DataLoaderDevice(train_generator, DEVICE)
@@ -150,8 +143,11 @@ def main():
 
     model = Subword_STE(vocab_size=len(vocab),
                         vocab_size_tokens=len(vocab_tokens),
-                        embedding_dim=100,
-                        hidden_dim=200,
+                        embedding_dim=args.emb_dim,
+                        embedding_dim_tokens=args.emb_dim_tokens,
+                        hidden_dim=args.hidden_dim,
+                        hidden_dim_tokens=args.hidden_dim_tokens,
+                        dropout_prob=args.dropout_prob,
                         share_emb=False)
 
     utils.initialize_model_(model)

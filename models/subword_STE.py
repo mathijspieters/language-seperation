@@ -14,9 +14,9 @@ class Subword_STE(nn.Module):
 
     def __init__(self,
                  embedding_dim: int = 300,
-                 token_embedding_dim: int = 30,
+                 embedding_dim_tokens: int = 30,
                  hidden_dim: int = 200,
-                 hidden_dim_token: int = 30,
+                 hidden_dim_tokens: int = 30,
                  vocab_size: int = 0,
                  vocab_size_tokens: int = 0,
                  dropout_prob: float = 0.5,
@@ -31,9 +31,9 @@ class Subword_STE(nn.Module):
 
         self.emb = nn.Embedding(vocab_size, embedding_dim, padding_idx=0)
 
-        self.emb_token_l1 = nn.Embedding(vocab_size_tokens, token_embedding_dim, padding_idx=0)
+        self.emb_token_l1 = nn.Embedding(vocab_size_tokens, embedding_dim_tokens, padding_idx=0)
         if not share_emb:
-            self.emb_token_l2 = nn.Embedding(vocab_size_tokens, token_embedding_dim, padding_idx=0)
+            self.emb_token_l2 = nn.Embedding(vocab_size_tokens, embedding_dim_tokens, padding_idx=0)
 
         self.encoder = RCNNEncoder(embedding_dim, hidden_dim, bidirectional=bidirectional) if encoder == 'cnn' else\
                         LSTMEncoder(embedding_dim, hidden_dim, bidirectional=bidirectional)
@@ -41,11 +41,11 @@ class Subword_STE(nn.Module):
         self.bernoulli_gate = STE(hidden_dim * (int(bidirectional) + 1), 1)
         self.dropout = nn.Dropout(dropout_prob)
 
-        self.token_encoder_l1 = nn.LSTM(token_embedding_dim, hidden_dim_token, bidirectional=False)
-        self.token_encoder_l2 = nn.LSTM(token_embedding_dim, hidden_dim_token, bidirectional=False)
+        self.token_encoder_l1 = nn.LSTM(embedding_dim_tokens, hidden_dim_tokens, bidirectional=False)
+        self.token_encoder_l2 = nn.LSTM(embedding_dim_tokens, hidden_dim_tokens, bidirectional=False)
 
-        self.token_prob_l1 = nn.Linear(hidden_dim_token, vocab_size_tokens)
-        self.token_prob_l2 = nn.Linear(hidden_dim_token, vocab_size_tokens)
+        self.token_prob_l1 = nn.Linear(hidden_dim_tokens, vocab_size_tokens)
+        self.token_prob_l2 = nn.Linear(hidden_dim_tokens, vocab_size_tokens)
 
 
     def get_z(self, sentence):
