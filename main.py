@@ -21,7 +21,7 @@ args.model = 'subword_STE'
 
 PATH = utils.args_to_results_path(args)
 
-def eval(model, test_generator, vocab, vocab_tokens):
+def eval(model, test_generator, vocab, vocab_tokens, epoch):
     model.eval()
 
     z_values_dict = defaultdict(list)
@@ -66,7 +66,7 @@ def eval(model, test_generator, vocab, vocab_tokens):
 
     evaluate.generate_words(model, vocab_tokens)
 
-    evaluate.determine_ROC(model, sorted_z_values, vocab, vocab_tokens)
+    evaluate.determine_ROC(model, sorted_z_values, vocab, vocab_tokens, PATH, epoch)
 
 
 def train(model, train_generator, test_generator, vocab, vocab_tokens, epochs=args.epochs):
@@ -82,13 +82,12 @@ def train(model, train_generator, test_generator, vocab, vocab_tokens, epochs=ar
         summary_dict = defaultdict(float)
 
         if epoch % args.eval_every == 0:
-            eval(model, test_generator, vocab, vocab_tokens)
+            eval(model, test_generator, vocab, vocab_tokens, epoch)
 
         if epoch % args.save_every == 0:
             utils.save_model(model, PATH)
 
         model.train()
-
 
         with tqdm(total=len(train_generator), leave=False) as t:
             for batch_inputs_sentence, batch_inputs_tokens, batch_targets in train_generator:
@@ -98,16 +97,14 @@ def train(model, train_generator, test_generator, vocab, vocab_tokens, epochs=ar
 
                 loss, optional_loss = model.get_loss(batch_inputs_tokens, z, p_l1, p_l2)
 
-                for k in optional_loss:
-                    extra_keys.add(k)
-                    summary_dict[k] += optional_loss[k]
-
                 loss.backward()
 
                 torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=args.max_grad_norm)
                 optimizer.step()
 
                 summary_dict['loss'] += loss.item()
+                summary_dict['acc'] += optional_loss['acc']
+
                 epoch_loss += loss.item()
 
                 step += 1
@@ -126,17 +123,10 @@ def main():
               'shuffle': True,
               'num_workers': 1}
 
-    if args.dataset == 'sentimix':
-        train_generator, test_generator, vocab, vocab_tokens = dataloader.load_sentimix_tokens(params,
+    train_generator, test_generator, vocab, vocab_tokens = dataloader.load_sentimix_tokens(params,
                                                                                                binary=True,
                                                                                                use_balanced_loader=False,
                                                                                                language=args.language)
-    elif args.dataset == 'hatespeech':
-        train_generator, test_generator, vocab, vocab_tokens = dataloader.load_hatespeech_tokens(params,
-                                                                                               use_balanced_loader=False)
-    else:
-        raise NotImplementedError("This dataset is not implemented")
-
 
     train_generator = dataset.DataLoaderDevice(train_generator, DEVICE)
     test_generator = dataset.DataLoaderDevice(test_generator, DEVICE)

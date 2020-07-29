@@ -3,15 +3,10 @@ import pandas as pd
 import numpy as np
 import torch
 from collections import Counter
-import sklearn.metrics as metrics
 from sklearn.preprocessing import normalize
 import math
 import torch.nn as nn
 from torch.nn.init import _calculate_fan_in_and_fan_out
-
-#import matplotlib
-#matplotlib.use('Agg')
-#import matplotlib.pyplot as plt
 
 from sklearn.model_selection import train_test_split
 
@@ -71,29 +66,6 @@ def process_sentimix(language='hindi'):
     df = pd.concat([train, test])
 
     return df
-
-
-def process_hatespeech():
-    """
-
-    Process hate speech dataset
-    """
-
-    file = 'hate_speech.tsv'
-
-    df = pd.read_csv(os.path.join(script_dir, data_folder, file), sep='\t', names=['tokens', 'label'])
-
-    train, test = train_test_split(df, test_size=0.1)
-
-    train = train.copy()
-    test = test.copy()
-    train['splitset_label'] = 'train'
-    test['splitset_label'] = 'test'
-
-    df = pd.concat([train, test])
-
-    return df
-
 
 def calculate_class_weights(original_dataloader):
     """
@@ -195,7 +167,7 @@ def args_to_results_path(args):
     Create path for model, if model is only evaluated return the specified path.
     For every new experiment a new folder is created, using an incremental number
     """
-    path = os.path.join('results', args.dataset)
+    path = 'results/sentimix'
 
     if not os.path.exists(os.path.join(path, '0')):
         path = os.path.join(path, '0')

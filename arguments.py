@@ -23,7 +23,7 @@ parser.add_argument('--eval_every', type=int, default=5)
 parser.add_argument('--save_every', type=int, default=10)
 parser.add_argument('--batch_size', type=int, default=32)
 parser.add_argument('--lr', type=float, default=10e-4)
-parser.add_argument('--weight_decay', type=float, default=10e-6)
+parser.add_argument('--weight_decay', type=float, default=0)
 
 parser.add_argument('--hidden_dim', type=int, default=200)
 parser.add_argument('--emb_dim', type=int, default=100)

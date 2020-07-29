@@ -7,9 +7,10 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 from models.rcnn import RCNNEncoder
 from models.lstm import LSTMEncoder
 
+
 class Subword_STE(nn.Module):
     """
-    TODO: explain
+    Two-way language model
     """
 
     def __init__(self,
@@ -35,8 +36,8 @@ class Subword_STE(nn.Module):
         if not share_emb:
             self.emb_token_l2 = nn.Embedding(vocab_size_tokens, embedding_dim_tokens, padding_idx=0)
 
-        self.encoder = RCNNEncoder(embedding_dim, hidden_dim, bidirectional=bidirectional) if encoder == 'cnn' else\
-                        LSTMEncoder(embedding_dim, hidden_dim, bidirectional=bidirectional)
+        self.encoder = RCNNEncoder(embedding_dim, hidden_dim, bidirectional=bidirectional) if encoder == 'cnn' else \
+            LSTMEncoder(embedding_dim, hidden_dim, bidirectional=bidirectional)
 
         self.bernoulli_gate = STE(hidden_dim * (int(bidirectional) + 1), 1)
         self.dropout = nn.Dropout(dropout_prob)
@@ -47,8 +48,10 @@ class Subword_STE(nn.Module):
         self.token_prob_l1 = nn.Linear(hidden_dim_tokens, vocab_size_tokens)
         self.token_prob_l2 = nn.Linear(hidden_dim_tokens, vocab_size_tokens)
 
-
     def get_z(self, sentence):
+        """
+        Predict z values for a sentence
+        """
         mask = (sentence != 0)
         lengths = mask.sum(1)
         embeds = self.emb(sentence)
@@ -62,8 +65,11 @@ class Subword_STE(nn.Module):
 
         return out_z
 
-
     def generate_token(self, max_length=10, l1=True, temperature=1, prefix=None):
+        """
+        Generate a token
+        """
+
         start_token = torch.LongTensor([[2]]).to(device)
 
         if l1:
@@ -100,6 +106,10 @@ class Subword_STE(nn.Module):
         return output
 
     def word_prob(self, tokens, l1=True):
+        """
+        Calculate the probability of a sequence of tokens
+        """
+
         start_token = torch.LongTensor([[2]]).to(device)
 
         if l1:
@@ -134,7 +144,6 @@ class Subword_STE(nn.Module):
 
         return log_prob.item() / len(tokens)
 
-
     def forward(self, sentence, sentence_tokens):
         mask = (sentence != 0)
         lengths = mask.sum(1)
@@ -168,11 +177,10 @@ class Subword_STE(nn.Module):
 
         return out_z, prob_l1, prob_l2
 
-
     def get_loss(self, token_inputs, z, p_l1, p_l2):
         z_sample = z.unsqueeze(-1)
 
-        langauge_probs = z_sample * p_l1 + (1-z_sample) * p_l2
+        langauge_probs = z_sample * p_l1 + (1 - z_sample) * p_l2
 
         batch_size, max_sentence_length, max_word_length, vocab_size_token = langauge_probs.shape
 
@@ -198,6 +206,6 @@ class Subword_STE(nn.Module):
         correct = torch.where(token_mask, correct, torch.Tensor([0]).to(device))
         acc = correct.sum() / token_mask.sum()
 
-        optional = {'acc':acc.item()}
+        optional = {'acc': acc.item()}
 
         return final_loss, optional

@@ -1,3 +1,5 @@
+# Source: https://github.com/bastings/interpretable_predictions/blob/master/latent_rationale/nn/rcnn.py
+
 import math
 import torch
 from torch import nn

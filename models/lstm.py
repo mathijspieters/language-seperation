@@ -1,3 +1,5 @@
+# Source: https://github.com/bastings/interpretable_predictions/blob/master/latent_rationale/nn/lstm_encoder.py
+
 import torch
 from torch import nn
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
